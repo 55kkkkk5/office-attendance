@@ -23,6 +23,22 @@
 </div>
 
 <div class="card">
+  <h2>Summary — {{ month }} ({{ expected_days }} working din ab tak)</h2>
+  <table>
+    <tr><th>Naam</th><th>Present</th><th>Late</th><th>Absent</th></tr>
+    {% for s in summary %}
+    <tr>
+      <td>{{ s.name }}{% if s.role=='owner' %} <span class="small">(Owner)</span>{% endif %}</td>
+      <td><span class="badge badge-present">{{ s.present }}</span></td>
+      <td><span class="badge badge-late">{{ s.late }}</span></td>
+      <td><span class="badge badge-absent">{{ s.absent }}</span></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2>Roz ka Record</h2>
   <table>
     <tr><th>Naam</th><th>Date</th><th>In</th><th>Out</th><th>Status</th></tr>
     {% for r in rows %}
