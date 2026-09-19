@@ -370,6 +370,11 @@ def admin_employees():
     return render_template("admin_employees.html", employees=employees)
 
 
+# Make sure the database and tables exist whenever this module is imported -
+# this runs both with `python app.py` AND with `gunicorn app:app` (Render,
+# and most other hosts, start the app this second way, which skips the
+# `if __name__ == "__main__"` block below).
+init_db()
+
 if __name__ == "__main__":
-    init_db()
     app.run(host="0.0.0.0", port=5000, debug=True)
