@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Monthly Report{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0;font-size:20px;">📅 Monthly Report</h1>
+  <a href="{{ url_for('admin_logout') }}">Logout</a>
+</div>
+<div class="nav">
+  <a href="{{ url_for('admin_dashboard') }}">Aaj</a>
+  <a href="{{ url_for('admin_report') }}">Monthly Report</a>
+  <a href="{{ url_for('admin_employees') }}">Employees / PIN</a>
+</div>
+
+<div class="card">
+  <form method="get" style="display:flex;gap:10px;align-items:end;">
+    <div style="flex:1;">
+      <label for="month">Mahina chunein</label>
+      <input type="month" id="month" name="month" value="{{ month }}">
+    </div>
+    <button class="btn btn-primary" type="submit" style="margin-top:0;width:auto;padding:12px 18px;">Dekhein</button>
+  </form>
+  <a class="btn" style="background:#1e8e3e;text-align:center;text-decoration:none;" href="{{ url_for('admin_report_csv', month=month) }}">⬇️ CSV Download karein</a>
+</div>
+
+<div class="card">
+  <table>
+    <tr><th>Naam</th><th>Date</th><th>In</th><th>Out</th><th>Status</th></tr>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r['name'] }}</td>
+      <td>{{ r['work_date'] }}</td>
+      <td>{{ r['check_in_time'] or '-' }}</td>
+      <td>{{ r['check_out_time'] or '-' }}</td>
+      <td>{{ r['status'] or '-' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">Is mahine ka koi record nahi.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

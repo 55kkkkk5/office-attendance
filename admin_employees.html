@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Employees{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0;font-size:20px;">👥 Employees</h1>
+  <a href="{{ url_for('admin_logout') }}">Logout</a>
+</div>
+<div class="nav">
+  <a href="{{ url_for('admin_dashboard') }}">Aaj</a>
+  <a href="{{ url_for('admin_report') }}">Monthly Report</a>
+  <a href="{{ url_for('admin_employees') }}">Employees / PIN</a>
+</div>
+
+<div class="card">
+  <h2>Naya Employee Add Karein</h2>
+  <form method="post">
+    <input type="hidden" name="form_action" value="add">
+    <label>Naam</label>
+    <input type="text" name="name" required>
+    <label>Role</label>
+    <select name="role">
+      <option value="employee">Employee</option>
+      <option value="owner">Owner</option>
+    </select>
+    <label>PIN (4 digit)</label>
+    <input type="text" name="pin" maxlength="6" value="0000">
+    <button class="btn btn-primary" type="submit">Add Karein</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Sab Employees</h2>
+  <table>
+    <tr><th>Naam</th><th>Role</th><th>PIN</th><th>Status</th><th></th></tr>
+    {% for e in employees %}
+    <tr>
+      <td>{{ e['name'] }}</td>
+      <td>{{ e['role'] }}</td>
+      <td>
+        <form method="post" style="display:flex;gap:6px;">
+          <input type="hidden" name="form_action" value="pin">
+          <input type="hidden" name="emp_id" value="{{ e['id'] }}">
+          <input type="text" name="new_pin" value="{{ e['pin'] }}" style="width:70px;padding:6px;">
+          <button class="btn btn-primary" type="submit" style="margin-top:0;width:auto;padding:6px 10px;font-size:12px;">Save</button>
+        </form>
+      </td>
+      <td>{{ 'Active' if e['active'] else 'Inactive' }}</td>
+      <td>
+        <form method="post" class="inline">
+          <input type="hidden" name="form_action" value="toggle">
+          <input type="hidden" name="emp_id" value="{{ e['id'] }}">
+          <button class="btn" style="margin-top:0;width:auto;padding:6px 10px;font-size:12px;background:#6b7280;" type="submit">
+            {{ 'Off Karein' if e['active'] else 'On Karein' }}
+          </button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

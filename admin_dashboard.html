@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="topbar">
+  <h1 style="margin:0;font-size:20px;">📊 Aaj ka Dashboard</h1>
+  <a href="{{ url_for('admin_logout') }}">Logout</a>
+</div>
+<div class="nav">
+  <a href="{{ url_for('admin_dashboard') }}">Aaj</a>
+  <a href="{{ url_for('admin_report') }}">Monthly Report</a>
+  <a href="{{ url_for('admin_employees') }}">Employees / PIN</a>
+  <a href="{{ url_for('checkin_page') }}">Check-in Page</a>
+</div>
+
+{% if is_sunday %}
+<div class="flash">Aaj Sunday hai - office holiday.</div>
+{% endif %}
+
+<div class="stat-row">
+  <div class="stat"><b>{{ present }}</b><span>Aaye</span></div>
+  <div class="stat"><b>{{ late }}</b><span>Late</span></div>
+  <div class="stat"><b>{{ total - present }}</b><span>Absent</span></div>
+</div>
+
+<div class="card">
+  <h2>{{ today }}</h2>
+  <table>
+    <tr><th>Naam</th><th>Check-in</th><th>Check-out</th><th>Status</th></tr>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r['name'] }}{% if r['role']=='owner' %} <span class="small">(Owner)</span>{% endif %}</td>
+      <td>{{ r['check_in_time'] or '-' }}</td>
+      <td>{{ r['check_out_time'] or '-' }}</td>
+      <td>
+        {% if r['status'] == 'Late' %}
+          <span class="badge badge-late">Late</span>
+        {% elif r['status'] == 'Present' %}
+          <span class="badge badge-present">Present</span>
+        {% else %}
+          <span class="badge badge-absent">Absent</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

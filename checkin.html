@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Attendance Check-in{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>🕌 Office Attendance</h1>
+  <p class="subtitle">Apna naam chunein, PIN dalein, aur Check In ya Check Out par tap karein.</p>
+
+  <label for="employee">Apka Naam</label>
+  <select id="employee">
+    <option value="">-- Naam chunein --</option>
+    {% for e in employees %}
+      <option value="{{ e['id'] }}">{{ e['name'] }}{% if e['role']=='owner' %} (Owner){% endif %}</option>
+    {% endfor %}
+  </select>
+
+  <label for="pin">PIN</label>
+  <input type="password" id="pin" inputmode="numeric" maxlength="6" placeholder="Apna 4-digit PIN dalein">
+
+  <button class="btn btn-in" id="btnIn">✅ Check In</button>
+  <button class="btn btn-out" id="btnOut">🚪 Check Out</button>
+
+  <div id="result"></div>
+  <p class="status-line">Late time: {{ late_time }} ke baad &nbsp;|&nbsp; Office band: {{ close_time }}</p>
+</div>
+
+<script>
+const resultDiv = document.getElementById('result');
+const btnIn = document.getElementById('btnIn');
+const btnOut = document.getElementById('btnOut');
+
+function showResult(ok, msg){
+  resultDiv.className = 'result ' + (ok ? 'ok' : 'err');
+  resultDiv.textContent = msg;
+}
+
+function mark(action){
+  const employee_id = document.getElementById('employee').value;
+  const pin = document.getElementById('pin').value;
+  if(!employee_id){ showResult(false, "Pehle apna naam chunein."); return; }
+  if(!pin){ showResult(false, "PIN dalein."); return; }
+
+  btnIn.disabled = true; btnOut.disabled = true;
+  showResult(true, "Location le rahe hain...");
+
+  if(!navigator.geolocation){
+    sendMark(action, employee_id, pin, null, null);
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      sendMark(action, employee_id, pin, pos.coords.latitude, pos.coords.longitude);
+    },
+    function(err){
+      // still allow marking even if location denied, just without coordinates
+      sendMark(action, employee_id, pin, null, null);
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+}
+
+function sendMark(action, employee_id, pin, lat, lng){
+  fetch('/api/mark', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({employee_id, pin, action, lat, lng})
+  })
+  .then(r => r.json())
+  .then(data => {
+    showResult(data.ok, data.message);
+    btnIn.disabled = false; btnOut.disabled = false;
+    if(data.ok){ document.getElementById('pin').value=''; }
+  })
+  .catch(() => {
+    showResult(false, "Network error. Dobara koshish karein.");
+    btnIn.disabled = false; btnOut.disabled = false;
+  });
+}
+
+btnIn.addEventListener('click', () => mark('in'));
+btnOut.addEventListener('click', () => mark('out'));
+</script>
+{% endblock %}
