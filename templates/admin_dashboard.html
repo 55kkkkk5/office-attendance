@@ -2,18 +2,35 @@
 {% block title %}Admin Dashboard{% endblock %}
 {% block content %}
 <div class="topbar">
-  <h1 style="margin:0;font-size:20px;">📊 Aaj ka Dashboard</h1>
+  <h1>📊 Dashboard</h1>
   <a href="{{ url_for('admin_logout') }}">Logout</a>
 </div>
 <div class="nav">
-  <a href="{{ url_for('admin_dashboard') }}">Aaj</a>
+  <a class="active" href="{{ url_for('admin_dashboard') }}">Roz ka Record</a>
   <a href="{{ url_for('admin_report') }}">Monthly Report</a>
   <a href="{{ url_for('admin_employees') }}">Employees / PIN</a>
   <a href="{{ url_for('checkin_page') }}">Check-in Page</a>
 </div>
 
+<div class="card date-nav">
+  <a class="day-arrow" href="{{ url_for('admin_dashboard', date=prev_day) }}" title="Pichla din">‹</a>
+  <form method="get" class="date-form">
+    <input type="date" name="date" value="{{ today }}" onchange="this.form.submit()">
+  </form>
+  {% if not is_today %}
+    <a class="day-arrow" href="{{ url_for('admin_dashboard', date=next_day) }}" title="Agla din">›</a>
+  {% else %}
+    <span class="day-arrow disabled">›</span>
+  {% endif %}
+</div>
+{% if not is_today %}
+<div class="small" style="text-align:center;margin:-8px 0 16px;">
+  <a href="{{ url_for('admin_dashboard') }}">← Aaj par wapas jayein</a>
+</div>
+{% endif %}
+
 {% if is_sunday %}
-<div class="flash">Aaj Sunday hai - office holiday.</div>
+<div class="flash">Yeh Sunday hai - office holiday.</div>
 {% endif %}
 
 <div class="stat-row">
@@ -23,7 +40,7 @@
 </div>
 
 <div class="card">
-  <h2>{{ today }}</h2>
+  <h2>{{ today }}{% if is_today %} <span class="small">(Aaj)</span>{% endif %}</h2>
   <table>
     <tr><th>Naam</th><th>Check-in</th><th>Check-out</th><th>Status</th></tr>
     {% for r in rows %}
