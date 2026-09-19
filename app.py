@@ -53,6 +53,7 @@ def get_db():
         g.db = sqlite3.connect(DB_PATH)
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA foreign_keys = ON")
+        ensure_schema(g.db)  # safety net: guarantees tables exist on every connection
     return g.db
 
 
@@ -63,8 +64,11 @@ def close_db(exception=None):
         db.close()
 
 
-def init_db():
-    db = sqlite3.connect(DB_PATH)
+def ensure_schema(db):
+    """Create tables (if missing) and seed the default employee list (if empty).
+    Safe to call on every request - all statements are idempotent - so the
+    app can never end up serving requests against a database that has no
+    tables yet, no matter how/when the process was started."""
     db.executescript(
         """
         CREATE TABLE IF NOT EXISTS employees (
@@ -93,7 +97,6 @@ def init_db():
     )
     db.commit()
 
-    # Seed employees only if table is empty
     existing = db.execute("SELECT COUNT(*) c FROM employees").fetchone()[0]
     if existing == 0:
         owners = ["Hunain Khan", "Hammad Ahmed", "Fahad Ahmed"]
@@ -113,6 +116,15 @@ def init_db():
             )
         db.commit()
         print("Seeded default employee list with starter PINs (see README).")
+
+
+def init_db():
+    """Used for local/manual runs (python app.py). Opens its own short-lived
+    connection just to make sure the schema exists before the dev server
+    starts; get_db()/ensure_schema() is what actually protects every
+    request, including when the app is started via gunicorn."""
+    db = sqlite3.connect(DB_PATH)
+    ensure_schema(db)
     db.close()
 
 
@@ -370,6 +382,11 @@ def admin_employees():
     return render_template("admin_employees.html", employees=employees)
 
 
+# Make sure the database and tables exist whenever this module is imported -
+# this runs both with `python app.py` AND with `gunicorn app:app` (Render,
+# and most other hosts, start the app this second way, which skips the
+# `if __name__ == "__main__"` block below).
+init_db()
+
 if __name__ == "__main__":
-    init_db()
     app.run(host="0.0.0.0", port=5000, debug=True)
