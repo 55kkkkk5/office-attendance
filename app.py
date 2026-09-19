@@ -15,7 +15,7 @@ import csv
 import io
 import os
 import sqlite3
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timedelta
 
 from flask import (
     Flask, request, render_template, redirect, url_for,
@@ -283,22 +283,38 @@ def admin_dashboard():
     if not require_admin():
         return redirect(url_for("admin_login"))
     db = get_db()
-    today = date.today().isoformat()
+
+    # Which day are we looking at? Defaults to today, but a date= query
+    # param (from the date picker, or the prev/next arrows) lets the owner
+    # browse any previous day's attendance, not just today's.
+    selected = request.args.get("date", date.today().isoformat())
+    try:
+        selected_date = date.fromisoformat(selected)
+    except ValueError:
+        selected_date = date.today()
+    selected = selected_date.isoformat()
+
     rows = db.execute(
         """SELECT e.name, e.role, a.check_in_time, a.check_out_time, a.status
            FROM employees e
            LEFT JOIN attendance a ON a.employee_id = e.id AND a.work_date = ?
            WHERE e.active = 1
            ORDER BY e.role DESC, e.name""",
-        (today,),
+        (selected,),
     ).fetchall()
     present = sum(1 for r in rows if r["check_in_time"])
     late = sum(1 for r in rows if r["status"] == "Late")
     total = len(rows)
+
+    prev_day = (selected_date - timedelta(days=1)).isoformat()
+    next_day = (selected_date + timedelta(days=1)).isoformat()
+    is_today = selected_date == date.today()
+
     return render_template(
         "admin_dashboard.html",
-        rows=rows, today=today, present=present, late=late, total=total,
-        is_sunday=is_sunday(date.today()),
+        rows=rows, today=selected, present=present, late=late, total=total,
+        is_sunday=is_sunday(selected_date),
+        prev_day=prev_day, next_day=next_day, is_today=is_today,
     )
 
 
