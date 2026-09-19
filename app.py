@@ -302,6 +302,25 @@ def admin_dashboard():
     )
 
 
+def working_days_so_far(month_str):
+    """Count non-Sunday days in the given 'YYYY-MM' month, up to today
+    (or the whole month, if the month is already in the past)."""
+    import calendar
+    year, mon = int(month_str[:4]), int(month_str[5:7])
+    days_in_month = calendar.monthrange(year, mon)[1]
+    today = date.today()
+    last_day = days_in_month
+    if year == today.year and mon == today.month:
+        last_day = today.day
+    elif date(year, mon, 1) > today:
+        last_day = 0  # future month - nothing expected yet
+    count = 0
+    for d in range(1, last_day + 1):
+        if not is_sunday(date(year, mon, d)):
+            count += 1
+    return count
+
+
 @app.route("/admin/report")
 def admin_report():
     if not require_admin():
@@ -315,7 +334,33 @@ def admin_report():
            ORDER BY a.work_date, e.name""",
         (month + "%",),
     ).fetchall()
-    return render_template("admin_report.html", rows=rows, month=month)
+
+    expected_days = working_days_so_far(month)
+    summary_rows = db.execute(
+        """SELECT e.id, e.name, e.role,
+                  SUM(CASE WHEN a.status = 'Present' THEN 1 ELSE 0 END) AS present_count,
+                  SUM(CASE WHEN a.status = 'Late' THEN 1 ELSE 0 END) AS late_count,
+                  COUNT(a.id) AS marked_count
+           FROM employees e
+           LEFT JOIN attendance a ON a.employee_id = e.id AND a.work_date LIKE ?
+           WHERE e.active = 1
+           GROUP BY e.id
+           ORDER BY e.role DESC, e.name""",
+        (month + "%",),
+    ).fetchall()
+    summary = []
+    for r in summary_rows:
+        absent_count = max(expected_days - r["marked_count"], 0)
+        summary.append({
+            "name": r["name"], "role": r["role"],
+            "present": r["present_count"], "late": r["late_count"],
+            "absent": absent_count,
+        })
+
+    return render_template(
+        "admin_report.html", rows=rows, month=month,
+        summary=summary, expected_days=expected_days,
+    )
 
 
 @app.route("/admin/report.csv")
